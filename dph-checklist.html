@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checklist povinností DPH</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.3);
+            height: 8px;
+            margin-top: 15px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: white;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .checklist-item:hover {
+            background: #f0f0f0;
+            transform: translateX(4px);
+        }
+
+        .checklist-item.completed {
+            background: #e8f5e9;
+            opacity: 0.7;
+        }
+
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+
+        .checklist-item.completed .checkbox {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .checkbox:hover {
+            border-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .label {
+            flex: 1;
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .checklist-item.completed .label {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer strong {
+            color: #667eea;
+        }
+
+        .clear-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .clear-btn:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 DPH Povinnosti</h1>
+            <p>Sledování odeslaných potvrzení</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="checklist"></div>
+        </div>
+
+        <div class="footer">
+            Hotovo: <strong><span id="completed">0</span>/<span id="total">0</span></strong>
+            <br>
+            <button class="clear-btn" onclick="clearAll()">Vymazat vše</button>
+        </div>
+    </div>
+
+    <script>
+        const tasks = [
+            'Premium Gate - Kontrolní hlášení',
+            'Premium Gate - Přiznání',
+            'Coffee nad Chips - Kontrolní hlášení',
+            'Coffee nad Chips - Přiznání',
+            'Online Net s.r.o. - Kontrolní hlášení',
+            'Online Net s.r.o. - Přiznání',
+            'Mabakus s.r.o. - Kontrolní hlášení',
+            'Mabakus s.r.o. - Přiznání',
+            'Požárně-bezpečnostní služby - Kontrolní hlášení',
+            'Požárně-bezpečnostní služby - Přiznání',
+            'Doluma home s.r.o. - Kontrolní hlášení',
+            'Doluma home s.r.o. - Přiznání',
+            'Jaroslav Zemina - Kontrolní hlášení',
+            'Jaroslav Zemina - Přiznání'
+        ];
+
+        let completed = {};
+
+        function initializeChecklist() {
+            loadFromStorage();
+            renderChecklist();
+            updateProgress();
+        }
+
+        function renderChecklist() {
+            const checklist = document.getElementById('checklist');
+            checklist.innerHTML = '';
+
+            tasks.forEach((task, index) => {
+                const item = document.createElement('div');
+                item.className = 'checklist-item';
+                if (completed[index]) {
+                    item.classList.add('completed');
+                }
+
+                item.innerHTML = `
+                    <div class="checkbox">${completed[index] ? '✓' : ''}</div>
+                    <div class="label">${task}</div>
+                `;
+
+                item.onclick = () => toggleTask(index);
+                checklist.appendChild(item);
+            });
+
+            document.getElementById('total').textContent = tasks.length;
+        }
+
+        function toggleTask(index) {
+            completed[index] = !completed[index];
+            saveToStorage();
+            renderChecklist();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const completedCount = Object.values(completed).filter(Boolean).length;
+            document.getElementById('completed').textContent = completedCount;
+
+            const progressPercent = (completedCount / tasks.length) * 100;
+            document.getElementById('progressFill').style.width = progressPercent + '%';
+        }
+
+        function clearAll() {
+            if (confirm('Opravdu chcete vymazat všechna označení?')) {
+                completed = {};
+                saveToStorage();
+                renderChecklist();
+                updateProgress();
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('dphChecklist', JSON.stringify(completed));
+        }
+
+        function loadFromStorage() {
+            const stored = localStorage.getItem('dphChecklist');
+            if (stored) {
+                completed = JSON.parse(stored);
+            }
+        }
+
+        initializeChecklist();
+    </script>
+</body>
+</html>
